@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en" data-color-scheme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Catalog Management System (2025)</title>
+  <meta name="description" content="A futuristic, glassmorphism-based product catalog CRUD system (2025 UI)">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-bg-main: #0a0a0a;
+      --glass-bg: rgba(255,255,255,0.09);
+      --glass-border: rgba(255,255,255,0.18);
+      --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+      --gradient-accent: linear-gradient(90deg, #3b82ff, #8b5cf6 85%);
+      --neon-blue: #3b82ff;
+      --neon-purple: #8b5cf6;
+      --brand-font: 'Inter', 'FKGroteskNeue', 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --card-radius: 22px;
+      --btn-radius: 56px;
+      --fab-shadow: 0 4px 24px 4px rgba(59,130,255,0.18);
+      --modal-bg: rgba(30,30,38,0.88);
+      --modal-backdrop: rgba(0,0,0,0.5);
+      --modal-blur: blur(10px);
+      --category-electronics: #3b82ff;
+      --category-footwear: #22d3ee;
+      --category-books: #fde68a;
+      --category-home: #bbf7d0;
+      --category-gaming: #c084fc;
+      --category-clothing: #f472b6;
+      --category-default: #6366f1;
+      --input-bg: rgba(255,255,255,0.10);
+      --input-border: rgba(255,255,255,0.13);
+      --input-focus: #7dd3fc;
+      --error-bg: #ef444447;
+      --success-highlight: #3b82ff44;
+      --toast-radius: 16px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      min-height: 100vh;
+      background: var(--color-bg-main);
+      color: #f3f4f6;
+      font-family: var(--brand-font);
+      font-size: 16px;
+      margin: 0; padding: 0;
+      letter-spacing: -0.01em;
+      -webkit-font-smoothing: antialiased;
+    }
+    body { min-height: 100dvh; }
+    
+    .bg-glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      border: 1.5px solid var(--glass-border);
+      box-shadow: var(--glass-shadow);
+      border-radius: var(--card-radius);
+    }
+    .container {
+      width: 100%; max-width: 1200px;
+      margin: 0 auto; padding: 32px 16px 120px;
+    }
+    .brand-header {
+      padding: 0 0 16px; display: flex;
+      align-items: center; gap: 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.09);
+      margin-bottom: 20px; justify-content: space-between;
+    }
+    .brand {
+      font-size: 2rem; letter-spacing: -0.025em;
+      font-weight: 800; display: flex; align-items: center;
+      background: var(--gradient-accent);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-fill-color: transparent;
+      text-shadow: 0 2px 12px #3b82ff77;
+      user-select: none;
+    }
+    .searchbar {
+      position: relative;
+      max-width: 340px;
+      width: 100%;
+      flex: 1 1 auto; margin-left: 60px;
+      display: flex;
+    }
+    .searchbar input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1.5px solid var(--input-border);
+      color: white;
+      border-radius: 30px;
+      padding: 10px 40px 10px 16px;
+      font-size: 1rem;
+      outline: none; transition: border 0.2s;
+    }
+    .searchbar input:focus { border: 1.5px solid var(--input-focus); }
+    .searchbar .icon {
+      position: absolute; right:16px; top:50%; transform: translateY(-50%); font-size: 20px; color: var(--neon-blue); pointer-events: none;
+    }
+    .actions-btn {
+      display:flex; gap:12px; align-items:center; margin-left:24px;
+    }
+    .fab-btn {
+      position: fixed; right:32px; bottom:32px; z-index:99;
+      background: var(--gradient-accent);
+      border:none;
+      color:white;
+      width:64px; height:64px; border-radius: 50%;
+      box-shadow: var(--fab-shadow);
+      font-size: 2rem; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition: transform 0.18s cubic-bezier(.66,.06,.68,.88);
+      will-change: transform;
+      animation: bounce-fab 1.4s cubic-bezier(.4,.05,.66,.98) infinite alternate;
+    }
+    .fab-btn:active { transform: scale(0.95); }
+    @keyframes bounce-fab {
+      0% { transform: translateY(0); }
+      60% { transform: translateY(-6px); }
+      100% { transform: translateY(-2px); }
+    }
+    .product-grid {
+      display: grid; gap:32px;
+      grid-template-columns: 1fr;
+      width: 100%; margin-top: 38px;
+    }
+    @media (min-width: 700px) {
+      .product-grid { grid-template-columns: repeat(2, 1fr);}
+    }
+    @media (min-width: 1024px) {
+      .product-grid { grid-template-columns: repeat(3, 1fr);}
+    }
+    @media (min-width: 1440px) {
+      .product-grid { grid-template-columns: repeat(4, 1fr);}
+    }
+    .product-card {
+      position: relative;
+      min-height: 340px;
+      overflow: hidden;
+      background: var(--glass-bg);
+      border-radius: var(--card-radius);
+      box-shadow: var(--glass-shadow);
+      border: 1.5px solid var(--glass-border);
+      display: flex; flex-direction: column;
+      transition: box-shadow 0.3s cubic-bezier(.6,.1,.68,.99), transform 0.24s cubic-bezier(.68,.19,.56,.93);
+      cursor:pointer;
+      will-change: transform, box-shadow;
+      animation: fadeInCard 0.8s ease;
+    }
+    .product-card:hover {
+      transform: translate3d(0, -8px, 0) scale(1.032);
+      box-shadow: 0 20px 60px rgba(59,130,255,0.18), 0 6px 32px var(--glass-bg);
+      z-index:2;
+    }
+    @keyframes fadeInCard {
+      from { opacity: 0; transform: translateY(32px) scale(0.98); }
+      to { opacity: 1; transform: none; }
+    }
+    .product-image {
+      width:100%; height:180px; object-fit:cover;
+      border-radius: 18px 18px 0 0;
+      background:rgba(59,130,255,0.09);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .card-content {
+      flex:1 1 auto; padding: 20px 18px 12px 18px;
+      display:flex; flex-direction:column; gap:11px;
+    }
+    .product-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom:2px;
+    }
+    .product-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 22px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: #18181b;
+      background: var(--category-default);
+      margin-bottom: 4px;
+    }
+    .product-badge[data-category="Electronics"]   { background: var(--category-electronics); }
+    .product-badge[data-category="Footwear"]      { background: var(--category-footwear); color: #22223c;}
+    .product-badge[data-category="Books"]         { background: var(--category-books);   color: #212217;}
+    .product-badge[data-category*="Home"]         { background: var(--category-home);    color: #19444d;}
+    .product-badge[data-category="Gaming"]        { background: var(--category-gaming); color: #22223c;}
+    .product-badge[data-category="Clothing"]      { background: var(--category-clothing);color: #20252e;}
+    .product-price {
+      font-size: 1.09rem;
+      font-weight: 600;
+      background: var(--gradient-accent);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color: transparent;
+      text-fill-color: transparent;
+      margin-bottom:5px;
+    }
+    .product-desc {
+      font-size: 0.965rem; color: #e5e7eb; opacity: 0.86;
+      margin-bottom: 8px;
+    }
+    .card-action-btns {
+      display:flex; gap:14px; margin-top: 7px;
+    }
+    .icon-btn {
+      background: rgba(59,130,255,0.11);
+      border:none;
+      color: #8b5cf6;
+      border-radius: 50%;
+      width: 40px; height: 40px; font-size: 22px;
+      display:flex; align-items:center;justify-content:center;
+      transition: background 0.23s, transform 0.14s;
+      cursor:pointer;
+      margin-right:6px;
+    }
+    .icon-btn:hover { background: var(--gradient-accent); color:#fff; transform:scale(1.14);}
+    .empty-state {
+      width:100%; text-align:center; padding: 80px 0 60px;
+      color: #cfcde9; opacity:0.82;
+      font-size:1.2rem;
+    }
+    .empty-illustration {
+      display: block; margin: 0 auto 14px; opacity:.68;
+      width: 96px; height: 96px;
+    }
+    /* FILTER PANEL */
+    .filters-row {
+      width:100%; display:flex; flex-wrap:wrap; align-items:center;
+      gap: 18px; margin: 6px 0 0 0; justify-content: flex-start;
+    }
+    .filter-chip {
+      border-radius: 18px; font-size: 0.97rem;
+      padding: 5px 15px; font-weight: 600;
+      border:none; background:var(--input-bg);
+      color:#cfcde9; margin-right:4px; cursor:pointer;
+      margin-bottom: 3px;
+      outline: none; transition:background 0.15s,box-shadow .16s,color 0.15s;
+    }
+    .filter-chip.selected {
+      background: var(--gradient-accent);
+      color:#fff; box-shadow:0 1px 6px #3b82ff33;
+    }
+    .sort-select {
+      background: var(--input-bg);
+      border-radius:12px; color: #fff; border: 1.2px solid var(--input-border);
+      font-size: 1rem; padding: 5px 12px;
+      outline:none; transition:border 0.17s;
+    }
+    .sort-select:focus { border:1.2px solid var(--input-focus); }
+    .filter-indicator {
+      background:rgba(59,130,255,0.17); color:#fff; font-weight:600;
+      font-size:0.85rem; border-radius: 10px; margin-left:10px; padding:3px 8px;
+    }
+    .clear-filters {
+      background:none; color: #8b5cf6;
+      border: none; text-decoration: underline; font-size: 0.97em;
+      cursor: pointer; margin-left: 20px;
+      transition: color .14s;
+    }
+    .clear-filters:hover { color: #c084fc; }
+    .slider-row {
+      display:flex; align-items:center; gap:15px;
+      margin:10px 0 0 0;
+    }
+    .slider-label {
+      font-size: 0.94em; color: #cfcde9;
+      min-width: 63px;
+    }
+    .price-slider-wrap {
+      flex: 1 1 160px; position:relative;
+    }
+    .slider-label.val { min-width: 80px;  text-align:right; font-weight:600;}
+    .dual-slider { width:100%;}
+    input[type="range"].dual-slider {
+      appearance:none; height:3px; background:linear-gradient(90deg,var(--neon-blue),#22223c 110%);
+      border-radius: 2px; outline:none; transition:background .12s;
+    }
+    input[type="range"].dual-slider::-webkit-slider-thumb {
+      -webkit-appearance:none; appearance:none;
+      width:20px; height:20px; background:var(--gradient-accent);
+      border-radius:50%; cursor:pointer; border: 2px solid #18191a;
+      box-shadow:0 2px 7px #3b82ff28; transition: background .14s;
+    }
+    input[type="range"].dual-slider:focus::-webkit-slider-thumb {
+      outline: 2px solid #3b82ff;
+    }
+    input[type="range"].dual-slider::-moz-range-thumb {
+      width:20px; height:20px; background:var(--gradient-accent);
+      border-radius:50%; border: 2px solid #18191a;
+      box-shadow:0 2px 7px #3b82ff28; cursor:pointer; transition: background .14s;
+    }
+    input[type="range"].dual-slider:focus::-moz-range-thumb {
+      outline: 2px solid #3b82ff;
+    }
+    /* Remove underline on Chrome, FF, Edge */
+    input[type="range"].dual-slider::-ms-fill-lower {background: var(--gradient-accent);}
+    input[type="range"].dual-slider::-ms-fill-upper {background: #22223c;}
+    /* Hide ticks */
+    input[type="range"].dual-slider::-webkit-slider-runnable-track {height:3px;}
+    /* MODAL */
+    .modal-backdrop {
+      position:fixed;top:0;left:0;right:0;bottom:0;
+      background: var(--modal-backdrop);
+      backdrop-filter: var(--modal-blur);
+      z-index: 123;
+      animation:fadeInModalBG .26s;
+    }
+    @keyframes fadeInModalBG {
+      0% { opacity:0; }
+      100% { opacity:1; }
+    }
+    .modal-box {
+      position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.97) translateY(56px);
+      min-width:320px;max-width:400px;width:90vw;
+      padding:36px 28px 30px;
+      border-radius:28px;z-index:142;background:var(--modal-bg);
+      box-shadow:0 8px 64px #18183e88;
+      animation:modalSlideUp .36s cubic-bezier(.63,.03,.37,.98) forwards;
+      backdrop-filter: blur(28px);
+    }
+    @keyframes modalSlideUp {
+      0% { opacity:0; transform:translate(-50%,-50%) scale(.98) translateY(100px);}
+      85%{ opacity:1; }
+      100%{ opacity:1; transform:translate(-50%,-50%) scale(1) translateY(0); }
+    }
+    .modal-title { font-weight:700;font-size:1.32em;margin-bottom:12px; color:#c7b6fa;}
+    .modal-form-group { display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+    .modal-form-label { font-size:.95em;color:#f3f4f7;margin-bottom:3px;}
+    .modal-form-input, .modal-form-select {
+      background: var(--input-bg); font-size:1em; color:#fff; padding:8px 14px;
+      border:1.1px solid var(--input-border); border-radius:12px; outline:none;
+      transition: border .16s;
+    }
+    .modal-form-input:focus, .modal-form-select:focus {
+      border:1.1px solid var(--input-focus);
+      background:rgba(59,130,255,.09);
+    }
+    .modal-form-textarea {
+      min-height:34px; resize:vertical; max-height:120px;
+    }
+    .modal-actions {
+      margin-top: 2px; display:flex;gap:16px; justify-content:flex-end;align-items:center;
+    }
+    .btn-base {
+      padding:8px 20px; border-radius:var(--btn-radius);
+      border:none;font-weight:700;font-size:.98em;cursor:pointer;transition:background .18s,box-shadow .14s,transform .09s;
+      outline: none;
+      will-change: transform, box-shadow;
+      color: #fff;
+    }
+    .btn-primary { background: var(--gradient-accent); box-shadow: 0 0 8px #5047d430; }
+    .btn-primary:active { transform:scale(0.98); }
+    .btn-error { background:#ef4444; border-color:#ef4444; }
+    .btn-outline { background:none; border:1.1px solid #5047d473; color:#e0e7ff; }
+    .btn-outline:active { background: #5347d423; }
+    .modal-form-error {
+      background: var(--error-bg); color:#ef4444;
+      padding:4px 10px;border-radius:7px;margin:2px 0 0 0;font-size:.98em;
+    }
+    /* CONFIRMATION MODAL */
+    .modal-warning { color:#eab308; }
+    /* SKELETONS && SPINNERS */
+    .skeleton-card {
+      min-height:340px; width:100%; margin-bottom:3px; border-radius:var(--card-radius); background:rgba(255,255,255,0.06); box-shadow:var(--glass-shadow);overflow:hidden;
+      animation:skeletonPulse 1.6s linear infinite;
+    }
+    @keyframes skeletonPulse {
+      0%{ opacity: 0.44; }
+      50%{ opacity: 0.17; }
+      100%{ opacity: 0.44; }
+    }
+    .spinner-box {
+      display:flex;align-items:center;justify-content:center;width:80px;height:80px;margin:0 auto 18px auto;
+    }
+    .lds-ring {display:inline-block;position:relative;width:72px;height:72px;}
+    .lds-ring div{ box-sizing:border-box;display:block;position:absolute;width:56px;height:56px;margin:8px;border:7px solid #3b82ff;border-radius:50%;animation:ldsRing 1.2s cubic-bezier(.56,.06,.3,.92) infinite;border-color:#3b82ff transparent transparent transparent;}
+    .lds-ring div:nth-child(1){animation-delay:-.3s}
+    .lds-ring div:nth-child(2){animation-delay:-.15s}
+    .lds-ring div:nth-child(3){animation-delay:0s}
+    @keyframes ldsRing{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+    .fade-out-hide { opacity: 0; transition: opacity .33s cubic-bezier(.6,.2,.6,1); pointer-events:none; height:0; margin:0 !important; padding:0 !important; }
+    /* TOAST NOTIFICATIONS */
+    .toast-stack {
+      position: fixed;top:28px;right:36px;z-index:300;display:flex;flex-direction:column;gap:18px;max-width:320px;width:92vw;
+    }
+    .toast { border-radius:var(--toast-radius); padding: 14px 26px 14px 18px;
+      background: var(--glass-bg); color: #fff; border: 1.3px solid var(--glass-border);
+      box-shadow: var(--glass-shadow); font-weight:600; font-size:1em;
+      display:flex;align-items:center; gap:9px; opacity:0.93;
+      animation: toastIn .55s cubic-bezier(.59,.13,.31,.89);
+    }
+    @keyframes toastIn {
+      from { opacity:0; transform: translateY(-42px) scale(0.97); }
+      to { opacity:0.93; transform: none; }
+    }
+    .toast-success { border-left: 6px solid #3b82ff; }
+    .toast-error { border-left: 6px solid #ef4444; }
+    .toast-checkmark {
+      display:inline-block;width:24px;height:24px;
+      border-radius:50%;background: #3b82ff47;
+      margin-right:5px;position:relative;overflow:hidden;
+    }
+    .toast-checkmark-icon {
+      position:absolute;top:41%;left:38%;width:9px;height:14px;border-right:3px solid #46ffc1;border-bottom:3px solid #46ffc1;transform:rotate(35deg) scale(1.15);}
+    /* ANIMATIONS */
+    .ripple {
+      position: absolute; border-radius: 50%;
+      transform: scale(0); animation: rippleEffect .53s;
+      background: linear-gradient(90deg,#3b82ffbb,#8b5cf6cc 85%);
+      opacity: .2; pointer-events: none;
+    }
+    @keyframes rippleEffect {
+      to { transform: scale(2.2); opacity: 0; }
+    }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; border: 0; padding: 0; clip: rect(0, 0, 0, 0); overflow: hidden; }
+    /* ACCESSIBILITY: Modal focus ring */
+    :focus-visible { outline: 3px solid #3b82ffbb; outline-offset:2px; }
+    .modal-box:focus { outline:none;}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/javascript">
+    // --- DATA SIMULATION --- //
+    const initialProducts = [
+      {id: "1", name: "MacBook Pro 16-inch", category: "Electronics", price: 199900, description: "Apple MacBook Pro with M3 Max chip, 36GB RAM, 1TB SSD", imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "2", name: "Sony WH-1000XM5 Headphones", category: "Electronics", price: 29990, description: "Premium noise cancelling wireless headphones", imageUrl: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "3", name: "Nike Air Max 270", category: "Footwear", price: 12495, description: "Nike's lifestyle running shoes with maximum comfort", imageUrl: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "4", name: "The Alchemist Book", category: "Books", price: 350, description: "Paulo Coelho's bestselling philosophical novel", imageUrl: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "5", name: "Instant Pot Duo 7-in-1", category: "Home & Kitchen", price: 8999, description: "Multi-functional pressure cooker for every kitchen", imageUrl: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "6", name: "Samsung Galaxy S24 Ultra", category: "Electronics", price: 129999, description: "Latest flagship smartphone with S Pen and AI features", imageUrl: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "7", name: "Adidas Ultraboost 22", category: "Footwear", price: 16999, description: "Performance running shoes with responsive cushioning", imageUrl: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "8", name: "Harry Potter Complete Set", category: "Books", price: 2899, description: "Complete collection of all 7 Harry Potter books", imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "9", name: "Dyson V15 Detect Vacuum", category: "Home & Kitchen", price: 65900, description: "Advanced cordless vacuum with laser detection", imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "10", name: "PlayStation 5", category: "Gaming", price: 54990, description: "Next-gen gaming console with 4K gaming capabilities", imageUrl: "https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "11", name: "Canon EOS R6 Mark II", category: "Electronics", price: 189995, description: "Professional mirrorless camera with 24.2MP sensor", imageUrl: "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+      {id: "12", name: "Levi's 501 Jeans", category: "Clothing", price: 4999, description: "Classic straight-fit jeans in premium denim", imageUrl: "https://images.unsplash.com/photo-1542272604-787c3835535d?w=400", createdAt: "2025-10-17T10:00:00Z", updatedAt: "2025-10-17T10:00:00Z"},
+    ];
+    const categories = ["Electronics","Footwear","Books","Home & Kitchen","Gaming","Clothing"];
+    const priceRange = { min: 5, max: 200000, symbol: "₹" };
+  </script>
+  <script type="text/javascript">
+    // --- UTIL: Format INR --- //
+    function formatINR(amount) {
+      return priceRange.symbol + amount.toLocaleString('en-IN');
+    }
+  </script>
+  <script type="text/javascript">
+    // ---- MICRO REACT-LITE, STATE, AND UTILS
+    // A super light in-place React-like system (no framework, no JSX), for SPA state control
+    // --- To keep code single-file and self-contained! ---
+    (function(){
+      // --- State --- //
+      let db = initialProducts.map(product => ({...product}));
+      let state = {
+        search: '',
+        categoryFilters: [],
+        sort: 'PRICE_ASC',
+        priceMin: priceRange.min,
+        priceMax: priceRange.max,
+        loading: false,
+        showModal: false,
+        editProduct: null,
+        deletingId: null,
+        confirmDelete: null,
+        toast: [],
+        undoDelete: null,
+        gridLoading: false,
+      };
+      let root = document.getElementById('root');
+      let modalEl = null;//for focus manage
+      let toastTimeouts = [];
+      // --- Helper: Debounce --- //
+      function debounce(fn, delay){ let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); }; }
+      function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+      // --- Toast --- //
+      function showToast({msg,type='success'}){
+        const id = Date.now() + '_' + Math.random().toFixed(6).slice(2);
+        state.toast.push({id,msg,type});
+        render();
+        let timeout = setTimeout(()=>{
+          state.toast = state.toast.filter(t=>t.id!==id); render();
+        },2500);
+        toastTimeouts.push(timeout);
+      }
+      // --- UI: Micro-Ripple --- //
+      function rippleEffect(e) {
+        const btn = e.currentTarget;
+        const circle = document.createElement('span');
+        circle.className = 'ripple';
+        let d = Math.max(btn.offsetWidth, btn.offsetHeight);
+        circle.style.width = circle.style.height = d+'px';
+        circle.style.left = (e.offsetX - d/2)+'px';
+        circle.style.top = (e.offsetY - d/2)+'px';
+        btn.appendChild(circle);
+        setTimeout(()=>{circle.remove();}, 520);
+      }
+      // --- Filter/sort utilities --- //
+      function filterSortProducts(){
+        let list = db.slice();
+        // Filter by search
+        if(state.search){
+          let txt = state.search.toLowerCase();
+          list = list.filter(p => p.name.toLowerCase().includes(txt));
+        }
+        // Category
+        if(state.categoryFilters.length>0){
+          list = list.filter(p=> state.categoryFilters.includes(p.category));
+        }
+        // Price range
+        list = list.filter(p => p.price >= state.priceMin && p.price <= state.priceMax);
+        // Sorting
+        if(state.sort==='PRICE_ASC') list.sort((a,b)=>a.price-b.price);
+        else if(state.sort==='PRICE_DESC') list.sort((a,b)=>b.price-a.price);
+        else if(state.sort==='NAME_AZ') list.sort((a,b)=>a.name.localeCompare(b.name));
+        return list;
+      }
+      // --- CRUD Sim API (with mock delay & error simulation) --- //
+      async function addProductAPI(product){
+        state.loading = true; render(); await sleep(550);
+        let id = (+new Date()).toString();
+        db.push({...product, id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()});
+        state.loading = false;
+        showToast({msg:'Product added!'});
+        render();
+      }
+      async function updateProductAPI(id, updates){
+        state.loading = true; render(); await sleep(560);
+        let idx = db.findIndex(p => p.id === id);
+        db[idx] = { ...db[idx], ...updates, updatedAt: new Date().toISOString() };
+        state.loading = false;
+        showToast({msg:'Product updated!'}); render();
+      }
+      async function deleteProductAPI(id){
+        state.gridLoading = true; render();
+        await sleep(390);
+        // Support 'undo' - keep last deleted in state.undoDelete
+        let idx = db.findIndex(p=>p.id===id);
+        if(idx!==-1) state.undoDelete = {...db[idx]};
+        db = db.filter(p=>p.id!==id);
+        state.gridLoading = false;
+        showToast({msg:'Product deleted!','type':'error'});render();
+        setTimeout(()=>{ state.undoDelete=null; render(); }, 5200);
+      }
+      async function undoDeleteAPI(){
+        if(state.undoDelete){
+          db.push({...state.undoDelete, id: (Math.random()*1e8).toFixed(0)});
+          showToast({msg:'Undo complete: Product restored!'});
+          state.undoDelete=null; render();
+        }
+      }
+      // --- Event Handlers --- //
+      const handleSearch = debounce(val=> {state.search=val;render();},100);
+      function handleSort(e) {state.sort = e.target.value; render(); }
+      function handleCatFilter(c){
+        if(state.categoryFilters.includes(c)) state.categoryFilters = state.categoryFilters.filter(f=>f!==c);
+        else state.categoryFilters = [...state.categoryFilters, c];
+        render();
+      }
+      function handlePriceSlider(type, v){
+        if(type==='min') {
+          state.priceMin = Math.min(+v, state.priceMax-5);
+        } else {
+          state.priceMax = Math.max(+v, state.priceMin+5);
+        }
+        render();
+      }
+      function handleClearFilters(){
+        state.categoryFilters = [];
+        state.search = '';
+        state.priceMin = priceRange.min;
+        state.priceMax = priceRange.max;
+        render();
+      }
+      function openAddModal(){ state.showModal=true; state.editProduct=null; render(); setTimeout(focusModal,275); }
+      function openEditModal(prod){ state.showModal=true; state.editProduct=prod; render(); setTimeout(focusModal,275); }
+      function closeModal(){state.showModal=false; state.editProduct=null;render(); setTimeout(()=>{if(modalEl) modalEl.blur();},180);}
+      function openDeleteModal(id){state.deletingId=id; render();}
+      function closeDeleteModal(){state.deletingId=null; render();}
+      async function handleModalSave(e){
+        e.preventDefault();
+        let form = e.target;
+        let values = Object.fromEntries(new FormData(form));
+        let errs={};
+        if(!values.name.trim()) errs.name = 'Name required';
+        if(!values.category) errs.category = 'Choose a category';
+        if(!values.price||isNaN(+values.price)||+values.price<5) errs.price='Enter a valid price';
+        if(Object.keys(errs).length){ renderModalErrs(errs); return; }
+        form.querySelectorAll('input,select,textarea,button').forEach(f=>f.disabled=true);
+        if(state.editProduct) await updateProductAPI(state.editProduct.id, {...values, price:+values.price });
+        else await addProductAPI({...values, price:+values.price });
+        state.showModal=false; state.editProduct=null;
+        render();
+      }
+      function renderModalErrs(errs){
+        let modal = document.querySelector('.modal-box');
+        if(!modal) return;
+        modal.querySelectorAll('.modal-form-error').forEach(n=>n.remove());
+        Object.entries(errs).forEach(([k,v])=>{
+          let el = modal.querySelector(`[name="${k}"]`);
+          if(el){
+            let e = document.createElement('div');
+            e.className='modal-form-error';e.textContent=v;
+            el.parentNode.insertBefore(e,el.nextSibling);
+          }
+        });
+      }
+      // Accessibility modal focus
+      function focusModal(){ modalEl = document.querySelector('.modal-box'); if(modalEl) modalEl.focus(); }
+      // --- MAIN RENDER --- //
+      function render(){
+        root.innerHTML = '';
+        // HEADER //
+        root.appendChild(header());
+        // FILTERS PANEL //
+        root.appendChild(filtersPanel());
+        // PRODUCT GRID //
+        renderGrid(root);
+        // FAB //
+        root.appendChild(fabBtn());
+        // MODALS //
+        if(state.showModal) renderModalDialog();
+        if(state.deletingId) renderDeleteModal();
+        // TOAST //
+        root.appendChild(toastStack());
+        // Undo Delete
+        if(state.undoDelete) renderUndoOption();
+      }
+      // --- UI COMPONENTS --- //
+      function header(){
+        let div = document.createElement('nav');
+        div.className = 'brand-header';
+        div.innerHTML = `<span class="brand">ProdCat <span aria-hidden="true">🚀</span></span>
+          <form class="searchbar" onsubmit="return false;" autocomplete="off">
+            <input aria-label="Search products" type="search" name="search" placeholder="Search products" value="${state.search}" />
+            <span class="icon">🔍</span>
+          </form>
+          <div class="actions-btn"></div>`;
+        // Attach handler
+        let inp = div.querySelector('input[type="search"]');
+        inp.addEventListener('input', e => { state.search=e.target.value; handleSearch(state.search); });
+        return div;
+      }
+      function filtersPanel(){
+        let filters = document.createElement('section');
+        let chipRow = `<div class="filters-row">
+          ${categories.map(cat=>`<button type="button" class="filter-chip${state.categoryFilters.includes(cat)?' selected':''}" data-cat="${cat}">${cat}</button>`).join('')}
+          <select class="sort-select" aria-label="Sort products">
+            <option value="PRICE_ASC"${state.sort==='PRICE_ASC'?' selected':''}>Price Low-High</option>
+            <option value="PRICE_DESC"${state.sort==='PRICE_DESC'?' selected':''}>Price High-Low</option>
+            <option value="NAME_AZ"${state.sort==='NAME_AZ'?' selected':''}>Name A-Z</option>
+          </select>
+          ${filterIndicator()}
+          <button type="button" class="clear-filters">Clear all filters</button>
+        </div>`;
+        let sliderRow = `<div class="slider-row">
+          <span class="slider-label">Price:</span>
+          <span class="slider-label val">${formatINR(state.priceMin)}</span>
+          <div class="price-slider-wrap">
+            <input type="range" min="${priceRange.min}" max="${state.priceMax-5}" value="${state.priceMin}" class="dual-slider" id="minSlider" />
+            <input type="range" min="${state.priceMin+5}" max="${priceRange.max}" value="${state.priceMax}" class="dual-slider" id="maxSlider" />
+          </div>
+          <span class="slider-label val">${formatINR(state.priceMax)}</span>
+        </div>`;
+        filters.innerHTML = chipRow + sliderRow;
+        // Attach handlers
+        filters.querySelectorAll('.filter-chip').forEach(btn=>{
+          btn.onclick = (e)=>{handleCatFilter(btn.dataset.cat)};
+        });
+        filters.querySelector('.sort-select').onchange = handleSort;
+        filters.querySelector('.clear-filters').onclick = handleClearFilters;
+        filters.querySelector('#minSlider').oninput = e=>{ handlePriceSlider('min', e.target.value); };
+        filters.querySelector('#maxSlider').oninput = e=>{ handlePriceSlider('max', e.target.value); };
+        return filters;
+      }
+      function filterIndicator(){
+        let n = state.categoryFilters.length + (state.priceMin>priceRange.min||state.priceMax<priceRange.max?1:0) + (state.search?1:0);
+        if(n) return `<span class="filter-indicator">${n} Active</span>`;
+        return '';
+      }
+      function renderGrid(parent){
+        let list = filterSortProducts();
+        let grid = document.createElement('div');
+        grid.className='product-grid';
+        // Skeleton loading
+        if(state.gridLoading||state.loading){
+          for(let i=0;i<3;i++){let s=document.createElement('div');s.className='skeleton-card';grid.appendChild(s);}
+          parent.appendChild(grid); return;
+        }
+        if(list.length===0){
+          grid.innerHTML=`<div class='empty-state'><svg class='empty-illustration' fill='none' viewBox='0 0 90 90'><rect width='90' height='90' rx='22' fill='url(#g)' opacity='.67'/><path d='M66 67H24c-1.21 0-2.19-.93-2.19-2.08V27.08C21.81 25.93 22.79 25 24 25h42c1.21 0 2.19.93 2.19 2.08v37.84C68.19 66.07 67.21 67 66 67Z' fill='#8b5cf6' opacity='.14'/><rect x='28' y='34' width='12' height='5' rx='2.5' fill='#3b82ff' opacity='.38'/></svg>No products found. Try a different filter or add new products.</div>`;
+        } else {
+          list.forEach(product=> grid.appendChild(productCard(product)));
+        }
+        parent.appendChild(grid);
+      }
+      function productCard(prod){
+        let card = document.createElement('div');
+        card.className='product-card bg-glass';
+        card.tabIndex=0;
+        card.innerHTML=`<img src="${prod.imageUrl||''}" alt="${prod.name} image" class="product-image" loading="lazy"/>
+          <div class="card-content">
+            <span class="product-badge" data-category="${prod.category}">${prod.category}</span>
+            <div class="product-title">${prod.name}</div>
+            <span class="product-price">${formatINR(prod.price)}</span>
+            <div class="product-desc">${prod.description||''}</div>
+            <div class="card-action-btns">
+              <button aria-label="Edit Product" title="Edit" class="icon-btn icon-edit"><svg fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20"><path stroke-linecap="round" stroke-linejoin="round" d="M4 14.889V17h2.111L16.475 6.637a1.491 1.491 0 0 0-2.111-2.111l-8.364 8.364z"></path></svg></button>
+              <button aria-label="Delete Product" title="Delete" class="icon-btn icon-del"><svg fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" viewBox="0 0 20 20"><path stroke-linecap="round" stroke-linejoin="round" d="M6 6l8 8M6 14L14 6"></path></svg></button>
+            </div>
+          </div>`;
+        // Hover focus for ARIA
+        card.querySelector('.icon-edit').addEventListener('click', ev=>{rippleEffect(ev);openEditModal(prod);ev.stopPropagation();});
+        card.querySelector('.icon-del').addEventListener('click',ev=>{rippleEffect(ev);openDeleteModal(prod.id);ev.stopPropagation();});
+        // Keyboard shortcut: Enter to open edit
+        card.addEventListener('keydown', function(e){if(e.key==="Enter") openEditModal(prod);});
+        return card;
+      }
+      function fabBtn(){
+        let btn = document.createElement('button');
+        btn.className = 'fab-btn'; btn.setAttribute('aria-label','Add Product');
+        btn.innerHTML = '<svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M12 6v12m6-6H6"></path></svg>';
+        btn.onclick = ev=>{ openAddModal(); rippleEffect(ev); };
+        return btn;
+      }
+      function toastStack(){
+        let stack = document.createElement('div');
+        stack.className='toast-stack';
+        state.toast.forEach((t,i)=>{
+          let toast = document.createElement('div');
+          toast.className='toast toast-'+t.type;
+          let icon='';
+          if(t.type==='success'){ icon = `<span class="toast-checkmark"><span class='toast-checkmark-icon'></span></span>`; }
+          else if(t.type==='error'){ icon = `<span style='font-size:1.22em;color:#ef4444'>⚠️</span>`; }
+          toast.innerHTML= icon+ t.msg;
+          stack.appendChild(toast);
+        });
+        return stack;
+      }
+      function renderUndoOption(){
+        if(state.undoDelete){
+          let undo = document.createElement('div');
+          undo.className = 'toast';
+          undo.innerHTML = `<span style='font-size:1.13em'>🕒</span>Product deleted. <button class='btn-base btn-outline' style='margin-left:8px' tabindex='0'>Undo</button>`;
+          undo.querySelector('button').onclick = undoDeleteAPI;
+          document.getElementById('root').appendChild(undo);
+        }
+      }
+      // --- MODAL --- //
+      function renderModalDialog(){
+        let modalBG = document.createElement('div');
+        modalBG.className='modal-backdrop';
+        modalBG.tabIndex=0; //focus ring
+        document.body.appendChild(modalBG);
+        let modal = document.createElement('form');
+        modal.className='modal-box';
+        modal.setAttribute('tabindex','-1');
+        modal.setAttribute('role','dialog');
+        modal.setAttribute('aria-modal','true');
+        modal.setAttribute('aria-label', state.editProduct? 'Edit Product':'Add Product');
+        modal.onsubmit = handleModalSave;
+        modal.innerHTML=`<div class="modal-title">${state.editProduct? 'Edit Product':'Add Product'}</div>
+        <div class='modal-form-group'><label class='modal-form-label'>Name <span style='color:#3b82ff'>*</span></label>
+          <input class='modal-form-input' name='name' required maxlength='120' value='${state.editProduct?.name||''}' autocomplete="off" /></div>
+        <div class='modal-form-group'><label class='modal-form-label'>Category <span style='color:#3b82ff'>*</span></label>
+        <select class='modal-form-select' required name='category'>${categories.map(cat=>`<option value="${cat}"${state.editProduct?.category===cat?' selected':''}>${cat}</option>`).join('')}</select></div>
+        <div class='modal-form-group'><label class='modal-form-label'>Price (INR) <span style='color:#3b82ff'>*</span></label>
+        <input class='modal-form-input' name='price' type='number' required min='5' max='200000' value='${state.editProduct?.price||''}' /></div>
+        <div class='modal-form-group'><label class='modal-form-label'>Description</label>
+        <textarea class='modal-form-input modal-form-textarea' maxlength='255' name='description'>${state.editProduct?.description||''}</textarea></div>
+        <div class='modal-form-group'><label class='modal-form-label'>Image URL</label>
+        <input class='modal-form-input' name='imageUrl' type='url' placeholder='https://'/ value='${state.editProduct?.imageUrl||''}' ></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-base btn-outline" tabindex="0">Cancel</button>
+          <button class="btn-base btn-primary" type="submit">${state.loading?'<span class="spinner-box"><span class="lds-ring"><div></div><div></div><div></div></span></span>':'Save'}</button>
+        </div>`;
+        modal.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',e=>{
+            if(btn.textContent==='Cancel'){ closeModal(); e.preventDefault(); }}));
+        document.body.appendChild(modal);
+        setTimeout(()=>{if(modal) modal.focus();},30);
+        // Close on ESC
+        document.onkeydown = ev=>{ if(ev.key==='Escape'&&state.showModal){ closeModal(); } }
+      }
+      function renderDeleteModal(){
+        let modalBG = document.createElement('div');
+        modalBG.className='modal-backdrop';
+        modalBG.tabIndex=0;
+        document.body.appendChild(modalBG);
+        let modal = document.createElement('div');
+        modal.className='modal-box';
+        modal.setAttribute('tabindex','-1');
+        modal.setAttribute('role','dialog');
+        modal.setAttribute('aria-modal','true');
+        modal.innerHTML = `<div class="modal-title modal-warning">Delete Product?</div>
+        <p style='color:#f3f4f7'>Are you sure you want to <span style='color:#ef4444;font-weight:700'>permanently delete</span> this product?</p>
+        <div class="modal-actions">
+          <button class="btn-base btn-outline" type="button">Cancel</button>
+          <button class="btn-base btn-error" type="button">Delete</button>
+        </div>`;
+        modal.querySelector('.btn-outline').onclick = (e)=>{closeDeleteModal();modal.remove();modalBG.remove();};
+        modal.querySelector('.btn-error').onclick = async (e)=>{await deleteProductAPI(state.deletingId);closeDeleteModal();modal.remove();modalBG.remove();};
+        document.body.appendChild(modal);
+        setTimeout(()=>{modal.focus();},30);
+        // ESC to close
+        document.onkeydown = ev=>{ if(ev.key==='Escape'&&state.deletingId){ closeDeleteModal(); modal.remove();modalBG.remove(); } }
+      }
+      // --- INITIALIZE --- //
+      render();
+      window.addEventListener('resize', ()=>render());
+    })();
+  </script>
+</body>
+</html>
