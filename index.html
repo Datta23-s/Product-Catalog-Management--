@@ -521,19 +521,24 @@
       }
       // --- CRUD Sim API (with mock delay & error simulation) --- //
       async function addProductAPI(product){
-        state.loading = true; render(); await sleep(550);
+        state.loading = true;
+        await sleep(550);
         let id = (+new Date()).toString();
         db.push({...product, id, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()});
         state.loading = false;
         showToast({msg:'Product added!'});
-        render();
+        console.log('Product added successfully');
       }
       async function updateProductAPI(id, updates){
-        state.loading = true; render(); await sleep(560);
+        state.loading = true;
+        await sleep(560);
         let idx = db.findIndex(p => p.id === id);
-        db[idx] = { ...db[idx], ...updates, updatedAt: new Date().toISOString() };
+        if(idx !== -1) {
+          db[idx] = { ...db[idx], ...updates, updatedAt: new Date().toISOString() };
+        }
         state.loading = false;
-        showToast({msg:'Product updated!'}); render();
+        showToast({msg:'Product updated!'});
+        console.log('Product updated successfully');
       }
       async function deleteProductAPI(id){
         state.gridLoading = true; render();
@@ -578,11 +583,34 @@
       }
       function openAddModal(){ state.showModal=true; state.editProduct=null; render(); setTimeout(focusModal,275); }
       function openEditModal(prod){ state.showModal=true; state.editProduct=prod; render(); setTimeout(focusModal,275); }
-      function closeModal(){state.showModal=false; state.editProduct=null;render(); setTimeout(()=>{if(modalEl) modalEl.blur();},180);}
+      function closeModal(){
+        console.log('Closing modal...');
+        state.showModal=false; 
+        state.editProduct=null;
+        // Remove modal from DOM first
+        const modalBackdrop = document.querySelector('.modal-backdrop');
+        const modalBox = document.querySelector('.modal-box');
+        if(modalBackdrop) modalBackdrop.remove();
+        if(modalBox) modalBox.remove();
+        // Clean up event listeners
+        document.onkeydown = null;
+        render();
+        setTimeout(()=>{if(modalEl) modalEl.blur();},50);
+      }
       function openDeleteModal(id){state.deletingId=id; render();}
-      function closeDeleteModal(){state.deletingId=null; render();}
+      function closeDeleteModal(){
+        state.deletingId=null;
+        // Remove delete modal from DOM
+        const modalBackdrop = document.querySelector('.modal-backdrop');
+        const modalBox = document.querySelector('.modal-box');
+        if(modalBackdrop) modalBackdrop.remove();
+        if(modalBox) modalBox.remove();
+        document.onkeydown = null;
+        render();
+      }
       async function handleModalSave(e){
         e.preventDefault();
+        console.log('Saving product...');
         let form = e.target;
         let values = Object.fromEntries(new FormData(form));
         let errs={};
@@ -590,11 +618,29 @@
         if(!values.category) errs.category = 'Choose a category';
         if(!values.price||isNaN(+values.price)||+values.price<5) errs.price='Enter a valid price';
         if(Object.keys(errs).length){ renderModalErrs(errs); return; }
+        
+        // Disable form during save
         form.querySelectorAll('input,select,textarea,button').forEach(f=>f.disabled=true);
-        if(state.editProduct) await updateProductAPI(state.editProduct.id, {...values, price:+values.price });
-        else await addProductAPI({...values, price:+values.price });
-        state.showModal=false; state.editProduct=null;
-        render();
+        
+        try {
+          if(state.editProduct) {
+            await updateProductAPI(state.editProduct.id, {...values, price:+values.price });
+          } else {
+            await addProductAPI({...values, price:+values.price });
+          }
+          
+          // Reset form
+          form.reset();
+          
+          // Close modal properly
+          console.log('Save successful, closing modal...');
+          closeModal();
+          
+        } catch(error) {
+          console.error('Save failed:', error);
+          // Re-enable form on error
+          form.querySelectorAll('input,select,textarea,button').forEach(f=>f.disabled=false);
+        }
       }
       function renderModalErrs(errs){
         let modal = document.querySelector('.modal-box');
@@ -752,9 +798,22 @@
       }
       // --- MODAL --- //
       function renderModalDialog(){
+        // Remove existing modal if any
+        const existingBackdrop = document.querySelector('.modal-backdrop');
+        if(existingBackdrop) existingBackdrop.remove();
+        
         let modalBG = document.createElement('div');
         modalBG.className='modal-backdrop';
         modalBG.tabIndex=0; //focus ring
+        
+        // Add backdrop click handler to close modal
+        modalBG.addEventListener('click', function(e) {
+          if(e.target === modalBG) {
+            console.log('Backdrop clicked, closing modal...');
+            closeModal();
+          }
+        });
+        
         document.body.appendChild(modalBG);
         let modal = document.createElement('form');
         modal.className='modal-box';
@@ -778,17 +837,54 @@
           <button type="button" class="btn-base btn-outline" tabindex="0">Cancel</button>
           <button class="btn-base btn-primary" type="submit">${state.loading?'<span class="spinner-box"><span class="lds-ring"><div></div><div></div><div></div></span></span>':'Save'}</button>
         </div>`;
-        modal.querySelectorAll('button').forEach(btn=>btn.addEventListener('click',e=>{
-            if(btn.textContent==='Cancel'){ closeModal(); e.preventDefault(); }}));
+        // Add event listeners to buttons
+        const cancelBtn = modal.querySelector('button[type="button"]');
+        const saveBtn = modal.querySelector('button[type="submit"]');
+        
+        if(cancelBtn) {
+          cancelBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Cancel clicked, closing modal...');
+            // Reset form
+            modal.reset();
+            closeModal();
+          });
+        }
+        
+        // Prevent modal content clicks from closing modal
+        modal.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+        
         document.body.appendChild(modal);
         setTimeout(()=>{if(modal) modal.focus();},30);
-        // Close on ESC
-        document.onkeydown = ev=>{ if(ev.key==='Escape'&&state.showModal){ closeModal(); } }
+        
+        // Close on ESC key
+        document.onkeydown = function(ev) {
+          if(ev.key === 'Escape' && state.showModal) {
+            console.log('ESC pressed, closing modal...');
+            closeModal();
+          }
+        };
       }
       function renderDeleteModal(){
+        // Remove existing modal if any
+        const existingBackdrop = document.querySelector('.modal-backdrop');
+        if(existingBackdrop) existingBackdrop.remove();
+        
         let modalBG = document.createElement('div');
         modalBG.className='modal-backdrop';
         modalBG.tabIndex=0;
+        
+        // Add backdrop click handler for delete modal
+        modalBG.addEventListener('click', function(e) {
+          if(e.target === modalBG) {
+            console.log('Delete modal backdrop clicked, closing...');
+            closeDeleteModal();
+          }
+        });
+        
         document.body.appendChild(modalBG);
         let modal = document.createElement('div');
         modal.className='modal-box';
@@ -801,12 +897,40 @@
           <button class="btn-base btn-outline" type="button">Cancel</button>
           <button class="btn-base btn-error" type="button">Delete</button>
         </div>`;
-        modal.querySelector('.btn-outline').onclick = (e)=>{closeDeleteModal();modal.remove();modalBG.remove();};
-        modal.querySelector('.btn-error').onclick = async (e)=>{await deleteProductAPI(state.deletingId);closeDeleteModal();modal.remove();modalBG.remove();};
+        // Add click handlers for delete modal buttons
+        const cancelBtn = modal.querySelector('.btn-outline');
+        const deleteBtn = modal.querySelector('.btn-error');
+        
+        cancelBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Delete cancelled, closing modal...');
+          closeDeleteModal();
+        });
+        
+        deleteBtn.addEventListener('click', async function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Deleting product...');
+          await deleteProductAPI(state.deletingId);
+          closeDeleteModal();
+        });
+        
+        // Prevent modal content clicks from closing modal
+        modal.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+        
         document.body.appendChild(modal);
         setTimeout(()=>{modal.focus();},30);
-        // ESC to close
-        document.onkeydown = ev=>{ if(ev.key==='Escape'&&state.deletingId){ closeDeleteModal(); modal.remove();modalBG.remove(); } }
+        
+        // ESC to close delete modal
+        document.onkeydown = function(ev) {
+          if(ev.key === 'Escape' && state.deletingId) {
+            console.log('ESC pressed in delete modal, closing...');
+            closeDeleteModal();
+          }
+        };
       }
       // --- INITIALIZE --- //
       render();
